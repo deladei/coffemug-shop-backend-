@@ -96,6 +96,9 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /api/v1/admin/items/{id}/variants", s.requireRole(http.HandlerFunc(s.handleCreateVariant), "admin"))
 	mux.Handle("DELETE /api/v1/admin/variants/{id}", s.requireRole(http.HandlerFunc(s.handleDeleteVariant), "admin"))
 
+	// Admin-only: business reports (revenue is financial data → admin, not staff).
+	mux.Handle("GET /api/v1/admin/reports/summary", s.requireRole(http.HandlerFunc(s.handleReportSummary), "admin"))
+
 	return s.recoverPanic(s.logRequests(s.cors(mux)))
 }
 

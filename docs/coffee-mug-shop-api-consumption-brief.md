@@ -124,6 +124,18 @@ Build this as an interceptor once. Every screen below assumes it exists.
 - **States to build:** *validation* (`400` for empty name / negative price / missing category), *duplicate category* (`409 duplicate`), *not found* (`404`). The item editor must support **repeatable variant rows**, since price lives on the variant, and a price input collects **pesewas** (or collect cedis in the UI and multiply by 100 before sending).
 - **Non-admin staff** calling these get `403 forbidden`; hide the menu-management surface for the staff role.
 
+### 4.1 Admin reports (dashboard)
+- **Powered by:** `GET /admin/reports/summary?days={n}`. **Auth:** Bearer (**admin only** — staff get `403`). `days` is optional (default 30, clamped to 1–365).
+- **Receives:**
+  ```json
+  {
+    "from": "2026-05-15", "to": "2026-06-13",
+    "totals": { "orders": 42, "paid_orders": 38, "revenue_pesewas": 95000 },
+    "daily": [ { "date": "2026-05-15", "orders": 0, "paid_orders": 0, "revenue_pesewas": 0 }, … ]
+  }
+  ```
+- **Notes for the frontend:** `daily` is **continuous** — every day in the window is present, gap days zero-filled — so plot it straight onto a chart with no gap handling. `orders` counts all orders placed that day; `paid_orders`/`revenue_pesewas` count only **confirmed** orders (payment taken, not cancelled) — pending and cancelled orders never contribute to revenue. Money is pesewas; format for display.
+
 ---
 
 ## 5. Quick reference: auth method per endpoint group
@@ -138,3 +150,4 @@ Build this as an interceptor once. Every screen below assumes it exists.
 | `/webhooks/paystack` | none from frontend — Paystack only |
 | `/admin/*` (queue, transition, availability) | Bearer, role staff or admin |
 | `/admin/categories|items|variants` (write) | Bearer, role admin |
+| `GET /admin/reports/summary` | Bearer, role admin (financial data) |
