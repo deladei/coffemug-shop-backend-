@@ -4,14 +4,15 @@ Single source of "where we are" and "what's next". Read this at session start.
 
 ## Current status
 
-- **Session:** 1 (in progress) — repo bootstrap.
-- **Build:** not yet (no Go code).
+- **Session:** 1 (in progress).
+- **Build:** module sound (no Go packages yet).
 - **Tests:** none yet.
-- **Phase 0 (scaffolding):** in progress — tooling verified (Go 1.22.4, psql 18.1, git 2.51), docs moved into `docs/`, `.gitignore` + `.env.example` + working docs created.
+- **Phase 0 (scaffolding):** ✅ committed `e83a81c`.
+- **Phase 1 step 1 (schema migration):** ✅ committed `129defd`. `migrations/0001_init.{up,down}.sql` verified against Postgres (11 tables up, 0 down, re-up clean).
 
 ## Next action
 
-Complete Phase 0: `git init` (branch `main`), add `origin` remote, run `git ls-remote` to confirm access and that the remote is empty, `go mod init coffeemug/backend`, then make the scaffolding commit. After that, begin Phase 1 step 1: `migrations/0001_init.up.sql` + `.down.sql` built exactly from `docs/coffee-mug-shop-database-schema.md`.
+Phase 1 step 2: `internal/domain` — the order status type, the fulfilment-aware transition function, terminality, and status validation. **Write the table-driven tests first**, covering every legal and illegal transition for both pickup and delivery. Then the code. `go build`/`vet`/`test` must be green. Commit `feat(domain): order state machine with tests`.
 
 ## Notes / open items
 
