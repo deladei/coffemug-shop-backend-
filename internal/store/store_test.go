@@ -15,10 +15,13 @@ import (
 //
 //	createdb coffeemug_test
 //	psql -d coffeemug_test -f migrations/0001_init.up.sql
-//	TEST_DATABASE_URL='postgres://localhost/coffeemug_test?sslmode=disable' go test ./internal/store/
+//	TEST_DATABASE_URL='host=/var/run/postgresql user=USER dbname=coffeemug_test sslmode=disable' \
+//	  go test -p 1 ./...
 //
 // With the variable unset the suite skips, so `go test ./...` stays green on a
-// machine without Postgres.
+// machine without Postgres. The store and httpapi suites share the one test
+// database and truncate it, so run the whole tree with -p 1 (serialize the
+// package binaries); within a package tests are already serial.
 
 // testStore opens the test database and hands back a clean Store: every table is
 // truncated first, so each test starts from an empty, identity-reset schema.
