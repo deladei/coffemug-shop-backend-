@@ -21,7 +21,7 @@ Single source of "where we are" and "what's next". Read this at session start.
 - **Phase 1 step 8 (httpapi):** ✅ committed `4f75b17`. `internal/httpapi` (10 files) — `server.go` route table + global chain (panic recovery → logging → CORS), `middleware.go` (Bearer/`?token=` auth, role gate, per-IP auth rate limit), handlers for auth/catalog/cart/checkout/orders/SSE/staff/admin, and `webhook_handlers.go` — the Paystack webhook, the **only** path to `paid`, enforcing TRD §5.2's four gates in order (signature → server-side verify → exact amount+GHS → legal transition), idempotent (paid→paid no-op), 5xx→retry / 200→stop, nil system actor. Standard error envelope throughout. The completing piece this session was the webhook handler (prior session stopped mid-step with it the one undefined symbol).
 - **Phase 1 step 9 (cmd/api):** ✅ committed `9b8e778`. `cmd/api/main.go` — composition + lifecycle only: `config.LoadFromEnv` → `store.Open` + startup ping (fail fast) → `auth.NewTokenManager`, `paystack.NewClient`, `sse.NewBroker` → `httpapi.NewServer` → serve `Handler()`. `http.Server` with slowloris read timeouts but **`WriteTimeout: 0`** (a positive write deadline would sever live SSE streams); SIGINT/SIGTERM → bounded graceful `Shutdown`. Binary boots + fails fast on missing env.
 - **Phase 1 step 10 (tests):** ✅ committed `8124f79` (store) + `013e4bb` (httpapi). Store suite against real Postgres — checkout (happy/empty/unavailable/duplicate-key), redemption (exact balance / over-balance reject / **concurrent double-spend → exactly one commit, balance 0, passes `-race`**), transition (legal/illegal/no-op/earn/refund-on-cancel). HTTP suite via `httptest` + fake Paystack — auth flow, wrong-password 401, ownership 404, staff 403 on manual `paid`, and the webhook four-gate matrix (happy/bad-sig/verify-failed/amount-mismatch/idempotent). Both skip without `TEST_DATABASE_URL`.
-- **Pushed to remotes:** Backend repo `origin/main` at `9b8e778` (then `+` loyalty + tests this session, **push pending** — see below). Monorepo PR #1 mirrored to `3a9d3db` (`5df0579`) — **now behind again** by loyalty + tests; needs a re-mirror.
+- **Pushed to remotes:** Backend repo `origin/main` at `09c8ede`. Monorepo PR [#1](https://github.com/Manyle4/mug-e-store/pull/1) mirrored to standalone `09c8ede` at monorepo `ffead51` (`backend/` only; verified 0 `frontend/` files in the PR diff). Both remotes in sync with this session's work.
 
 ## Next action
 
@@ -31,7 +31,7 @@ Single source of "where we are" and "what's next". Read this at session start.
 
 If continuing in-sandbox instead: re-mirror the monorepo PR (now behind by loyalty + tests), or start Phase 2 features.
 
-**Monorepo PR — behind again.** `Manyle4/mug-e-store` PR #1 was last mirrored to `3a9d3db` (`5df0579`); it now lacks the loyalty + test commits (`74376c9`, `8124f79`, `013e4bb`, docs). Re-run the mirror pass (clone, `git archive HEAD | tar -x -C backend/`, verify 0 `frontend/` files, push `backend-bootstrap`).
+**Monorepo PR — up to date.** `Manyle4/mug-e-store` PR #1 mirrored to standalone `09c8ede` (monorepo `ffead51`), `frontend/` untouched. Re-run a mirror pass after the next backend milestone (clone, `git archive HEAD | tar -x -C backend/`, verify 0 `frontend/` files, push `backend-bootstrap`).
 
 ## Notes / open items
 
