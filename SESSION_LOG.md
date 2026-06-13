@@ -16,3 +16,5 @@ One short entry per session: what was built or changed.
 
 - Resumed mid-Phase-1-step-8: `internal/httpapi` was written but failed to build — `server.go` referenced an undefined `handlePaystackWebhook` (prior session stopped right at the payment webhook).
 - `feat(api)` `4f75b17`: completed the HTTP layer by adding `webhook_handlers.go` — the Paystack webhook enforcing TRD §5.2's four payment gates (signature → server-side verify → exact amount+GHS → legal transition), idempotent on retries, transient→5xx / permanent→200, system as nil actor. `go build`/`vet`/`test` all clean.
+- `feat(cmd)` `9b8e778`: `cmd/api/main.go` entrypoint — wires config/store/auth/paystack/sse/httpapi into the single binary with a startup DB ping (fail fast), SSE-safe server timeouts (`WriteTimeout: 0`), and graceful SIGINT/SIGTERM shutdown. Verified the binary boots and fails fast on missing env.
+- Pushed httpapi + cmd/api to `origin/main` (`703b8ab..9b8e778`). Monorepo PR #1 mirror still pending.
