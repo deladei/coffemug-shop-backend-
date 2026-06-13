@@ -11,3 +11,8 @@ One short entry per session: what was built or changed.
 - `feat(domain)` `890e349`: fulfilment-aware order state machine, exhaustive table-driven tests green.
 - Decision: backend pushed to **two** repos — standalone `deladei/coffemug-shop-backend-` (root) and monorepo `Manyle4/mug-e-store` under `backend/` via PR (logged in `DECISIONS.md`).
 - Pushed: backend repo `main` ← 3 commits; monorepo PR #1 opened (`backend-bootstrap` → `main`).
+
+## Session 2 — 2026-06-13
+
+- Resumed mid-Phase-1-step-8: `internal/httpapi` was written but failed to build — `server.go` referenced an undefined `handlePaystackWebhook` (prior session stopped right at the payment webhook).
+- `feat(api)` `4f75b17`: completed the HTTP layer by adding `webhook_handlers.go` — the Paystack webhook enforcing TRD §5.2's four payment gates (signature → server-side verify → exact amount+GHS → legal transition), idempotent on retries, transient→5xx / permanent→200, system as nil actor. `go build`/`vet`/`test` all clean.
