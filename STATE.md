@@ -8,11 +8,14 @@ Single source of "where we are" and "what's next". Read this at session start.
 - **Build:** module sound (no Go packages yet).
 - **Tests:** none yet.
 - **Phase 0 (scaffolding):** ✅ committed `e83a81c`.
-- **Phase 1 step 1 (schema migration):** ✅ committed `129defd`. `migrations/0001_init.{up,down}.sql` verified against Postgres (11 tables up, 0 down, re-up clean).
+- **Phase 1 step 1 (schema migration):** ✅ committed `129defd`. Verified against Postgres (11 tables up, 0 down, re-up clean).
+- **Phase 1 step 2 (domain state machine):** ✅ committed `890e349`. Exhaustive table-driven tests green (`internal/domain`).
+- **Phase 1 step 3 (config loader):** ✅ `internal/config` — env-only, refuses to boot without `DATABASE_URL`/`JWT_SECRET`/`PAYSTACK_SECRET_KEY`, reports all problems at once; tests green.
+- **Pushed to remotes:** ✅ Backend repo `origin/main` at `890e349`. Monorepo: PR [#1](https://github.com/Manyle4/mug-e-store/pull/1) (`backend-bootstrap` → `main`, code under `backend/`) — open, awaiting merge.
 
 ## Next action
 
-Phase 1 step 2: `internal/domain` — the order status type, the fulfilment-aware transition function, terminality, and status validation. **Write the table-driven tests first**, covering every legal and illegal transition for both pickup and delivery. Then the code. `go build`/`vet`/`test` must be green. Commit `feat(domain): order state machine with tests`.
+Phase 1 step 4: `internal/auth` — bcrypt (cost 12) hash/compare, HS256 JWT access tokens (15 min, `uid`+`role` claims, signing method asserted on parse), and refresh-token generation + SHA-256 hashing. Tests for token round-trip, expiry, wrong-method rejection, and identical-error semantics. Commit `feat(auth): password hashing and JWT/refresh tokens`.
 
 ## Notes / open items
 
