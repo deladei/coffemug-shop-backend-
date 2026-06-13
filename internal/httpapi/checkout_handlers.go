@@ -18,6 +18,9 @@ type checkoutRequest struct {
 	Address        string `json:"address"`
 	Phone          string `json:"phone"`
 	IdempotencyKey string `json:"idempotency_key"`
+	// PointsToRedeem is optional; 0 (or omitted) redeems nothing. The discount it
+	// produces is decided server-side inside the checkout transaction.
+	PointsToRedeem int64 `json:"points_to_redeem"`
 }
 
 type checkoutResponse struct {
@@ -46,6 +49,10 @@ func (s *Server) handleCheckout(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, codeValidation, "delivery requires an address and phone number")
 		return
 	}
+	if req.PointsToRedeem < 0 {
+		writeError(w, http.StatusBadRequest, codeValidation, "points_to_redeem cannot be negative")
+		return
+	}
 
 	order, err := s.store.Checkout(r.Context(), store.CheckoutParams{
 		UserID:             u.ID,
@@ -54,6 +61,7 @@ func (s *Server) handleCheckout(w http.ResponseWriter, r *http.Request) {
 		Phone:              req.Phone,
 		DeliveryFeePesewas: s.cfg.DeliveryFeePesewas,
 		IdempotencyKey:     req.IdempotencyKey,
+		RedeemPoints:       req.PointsToRedeem,
 	})
 	switch {
 	case errors.Is(err, store.ErrEmptyCart):
@@ -61,6 +69,9 @@ func (s *Server) handleCheckout(w http.ResponseWriter, r *http.Request) {
 		return
 	case errors.Is(err, store.ErrUnavailable):
 		writeError(w, http.StatusConflict, codeUnavailable, "an item in your cart is no longer available")
+		return
+	case errors.Is(err, store.ErrInsufficientPoints):
+		writeError(w, http.StatusConflict, codeInsufficientPoints, "you do not have enough loyalty points to redeem that many")
 		return
 	case errors.Is(err, store.ErrDuplicateOrder):
 		writeError(w, http.StatusConflict, codeDuplicateOrder, "this checkout was already submitted")

@@ -30,6 +30,7 @@ const (
 	codeDuplicateOrder     = "duplicate_order"
 	codeEmptyCart          = "empty_cart"
 	codeUnavailable        = "unavailable"
+	codeInsufficientPoints = "insufficient_points"
 	codeInvalidTransition  = "invalid_transition"
 	codeRateLimited        = "rate_limited"
 	codePaymentInitFailed  = "payment_init_failed"
