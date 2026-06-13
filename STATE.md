@@ -13,11 +13,12 @@ Single source of "where we are" and "what's next". Read this at session start.
 - **Phase 1 step 3 (config loader):** ✅ committed `f48982f`. `internal/config` — env-only, refuses to boot without required secrets; tests green.
 - **Phase 1 step 4 (auth):** ✅ committed `351c75e`. bcrypt cost 12, HS256 JWT (alg=none rejected), SHA-256 refresh hashing. Deps pinned for Go 1.22.
 - **Phase 1 step 5 (store):** ✅ `internal/store` — `store.go` (handle, sentinels, users, refresh tokens), `catalog.go`, `cart.go`, `orders.go` (checkout txn with line snapshotting + cart clear; `TransitionOrder` with `FOR UPDATE` row lock → `domain.CanTransition` → audit event → loyalty earn on completed; ownership returns 404 not 403; idempotency-key NULL-on-empty). Builds + vets clean; **DB-backed tests deferred to Session 4** per plan.
-- **Pushed to remotes:** Backend repo `origin/main` at `351c75e`; monorepo PR [#1](https://github.com/Manyle4/mug-e-store/pull/1) at `953bc9d`. `config`+`auth` pushed; **store commit is local, unpushed.**
+- **Phase 1 step 6 (paystack):** ✅ `internal/paystack` — `Initialize`/`Verify` client (amount in pesewas, currency GHS, baseURL overridable) + `VerifySignature` (constant-time HMAC-SHA512). Tests green: signature valid/forged/wrong-secret/tampered/non-hex, plus Initialize/Verify via httptest.
+- **Pushed to remotes:** Backend repo `origin/main` at `faa6bc5`; monorepo PR [#1](https://github.com/Manyle4/mug-e-store/pull/1) at `8792eb0`. **paystack commit is local, unpushed.**
 
 ## Next action
 
-Phase 1 step 6: `internal/paystack` — initialize + verify client (POST /transaction/initialize, GET /transaction/verify/:ref against `PAYSTACK_BASE_URL`) and HMAC-SHA512 webhook signature verification. **Unit-test the signature check** against valid / forged / wrong-secret / tampered-body cases (no network). Commit `feat(paystack): init+verify client and webhook signature check`.
+Phase 1 step 7: `internal/sse` — an in-process pub/sub broker for order-status events with leak-free subscriber cleanup (subscribe returns a channel + unsubscribe; publish is non-blocking; closing on unsubscribe). No Redis/queue. Add a race-tested concurrency test. Commit `feat(sse): in-process order-status broker`.
 
 ## Notes / open items
 
