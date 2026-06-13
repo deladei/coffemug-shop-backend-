@@ -25,7 +25,7 @@ Single source of "where we are" and "what's next". Read this at session start.
 
 **Session 4 — the tests this sandbox has deferred (plan §5), against a real test database.** Stand up a Postgres test DB + a store test harness, then cover, in priority order: (1) `store.Checkout` — happy path, empty cart, unavailable item, duplicate idempotency key, **and the three redemption cases plan §3 calls for: redeem exactly the balance; over-balance → `ErrInsufficientPoints`; two concurrent redemptions of the same points → only one commits** (this is the double-spend test the `FOR UPDATE` user-row lock exists to pass); (2) `TransitionOrder` — legal/illegal/idempotent no-op, loyalty earn on completion, **and `refund_on_cancel` when a redeemed order is cancelled**; (3) HTTP-level tests with `httptest` — auth flow, ownership `404`, staff `403` on manual `paid`, and the webhook four-gate flow with a faked signature. After that: user-owned real-Paystack E2E (§4) + deploy (§6).
 
-**Outstanding delivery task (not code):** the monorepo PR (`Manyle4/mug-e-store` #1) still hasn't been updated since `8792eb0` — it lacks httpapi, cmd/api, the redemption work, and the API-brief contract change. Needs a PR-mirror pass (backend under `backend/`, never touching `frontend/`) per Git Law §3.4–3.5.
+**Monorepo PR — up to date.** `Manyle4/mug-e-store` PR #1 (`backend-bootstrap` → `main`) mirrored to standalone `3a9d3db` at monorepo commit `5df0579` (`backend/` only; `frontend/` untouched, verified 0 frontend files in the PR diff). Includes httpapi, cmd/api, loyalty redemption, and the API-brief contract change. Re-run a mirror pass after the next backend milestone.
 
 ## Notes / open items
 
