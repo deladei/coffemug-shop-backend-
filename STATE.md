@@ -4,7 +4,7 @@ Single source of "where we are" and "what's next". Read this at session start.
 
 ## Current status
 
-- **Session:** 2 (in progress).
+- **Session:** 2 — ✅ complete (2026-06-13). Next is Session 3. This session: finished the httpapi webhook, added `cmd/api`, shipped loyalty redemption, wrote the full DB-backed + HTTP test suites, and kept the monorepo PR mirrored. Working tree clean, both remotes in sync.
 - **Runnable:** ✅ `cmd/api` binary builds and boots; fails fast with an aggregated config error when required env is unset.
 - **Loyalty redemption:** ✅ feature complete + DB-tested. Pure `domain.Redemption` rule (9 unit cases); `store.Checkout` redeems inside the txn under a user-row `FOR UPDATE` lock; `TransitionOrder` refunds on cancel. Contract published to the API brief.
 - **Build:** `go build ./...` clean; `go vet ./...` clean.
@@ -29,7 +29,7 @@ Single source of "where we are" and "what's next". Read this at session start.
 1. **Real-Paystack E2E (plan §4):** put a Paystack **test** secret key in `.env`, tunnel the local server (e.g. `ngrok http 8080`), register the webhook URL, run a real checkout with a test card, and confirm the order flips to `paid` over the live webhook + the SSE stream updates. Also verify a *pending* (not-success) payment does **not** flip the order.
 2. **Deploy (plan §6):** host backend + Postgres; set `FRONTEND_ORIGIN`; switch the refresh cookie to `SameSite=None; Secure` if cross-origin.
 
-If continuing in-sandbox instead: re-mirror the monorepo PR (now behind by loyalty + tests), or start Phase 2 features.
+If continuing in-sandbox instead, the natural pick-up is **Phase 2 features** (see `docs/coffee-mug-shop-prd.md` §"Phasing"). When starting one: re-create the test DB if this box was reset (`createdb coffeemug_test` + apply `migrations/0001_init.up.sql`; DSN in the status block above), and re-mirror the monorepo PR at the end per the standing two-target rule.
 
 **Monorepo PR — up to date.** `Manyle4/mug-e-store` PR #1 mirrored to standalone `09c8ede` (monorepo `ffead51`), `frontend/` untouched. Re-run a mirror pass after the next backend milestone (clone, `git archive HEAD | tar -x -C backend/`, verify 0 `frontend/` files, push `backend-bootstrap`).
 
