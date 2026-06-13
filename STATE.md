@@ -6,6 +6,7 @@ Single source of "where we are" and "what's next". Read this at session start.
 
 - **Session:** 2 (in progress).
 - **Runnable:** ✅ `cmd/api` binary builds and boots; fails fast with an aggregated config error when required env is unset.
+- **Loyalty redemption:** ✅ feature complete (commit pending push). Pure `domain.Redemption` rule (unit-tested, 9 cases); `store.Checkout` redeems inside the txn under a user-row `FOR UPDATE` lock; `TransitionOrder` refunds on cancel. Contract change published to the API brief. **DB-backed redemption tests (happy-path, over-balance 409, concurrent double-spend) deferred to Session 4** per the established no-test-DB-this-session pattern.
 - **Build:** `go build ./...` clean.
 - **Tests:** `go test ./...` green (domain, config, auth, paystack, sse). `httpapi` + `store` have no tests yet (DB-backed + HTTP-level deferred to Session 4 per plan §5).
 - **Phase 0 (scaffolding):** ✅ committed `e83a81c`.
@@ -22,7 +23,9 @@ Single source of "where we are" and "what's next". Read this at session start.
 
 ## Next action
 
-The deliberately-deferred **loyalty redemption** feature (plan §3): let checkout redeem loyalty points against the order total. Append-only ledger (balance = `SUM(delta)`, no stored balance column); redemption is a negative `delta` row written **inside the checkout transaction** alongside the order; the amount sent to Paystack and the webhook's amount check both use the **discounted** `total_pesewas`, kept internally consistent. Reject redeeming more than the current balance; the redemption and the order must be one atomic write (two concurrent redemptions of the same points → only one succeeds). Tests per plan §3 (redeem exact balance; over-balance fails; concurrent double-redeem). After that: Session 4 DB-backed store + HTTP-level tests (plan §5), then user-owned real-Paystack E2E (§4) + deploy (§6).
+**Session 4 — the tests this sandbox has deferred (plan §5), against a real test database.** Stand up a Postgres test DB + a store test harness, then cover, in priority order: (1) `store.Checkout` — happy path, empty cart, unavailable item, duplicate idempotency key, **and the three redemption cases plan §3 calls for: redeem exactly the balance; over-balance → `ErrInsufficientPoints`; two concurrent redemptions of the same points → only one commits** (this is the double-spend test the `FOR UPDATE` user-row lock exists to pass); (2) `TransitionOrder` — legal/illegal/idempotent no-op, loyalty earn on completion, **and `refund_on_cancel` when a redeemed order is cancelled**; (3) HTTP-level tests with `httptest` — auth flow, ownership `404`, staff `403` on manual `paid`, and the webhook four-gate flow with a faked signature. After that: user-owned real-Paystack E2E (§4) + deploy (§6).
+
+**Outstanding delivery task (not code):** the monorepo PR (`Manyle4/mug-e-store` #1) still hasn't been updated since `8792eb0` — it lacks httpapi, cmd/api, the redemption work, and the API-brief contract change. Needs a PR-mirror pass (backend under `backend/`, never touching `frontend/`) per Git Law §3.4–3.5.
 
 ## Notes / open items
 
