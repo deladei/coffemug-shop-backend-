@@ -91,6 +91,13 @@ Build this as an interceptor once. Every screen below assumes it exists.
 - **States:** *zero balance* for new customers.
 - **Redeeming at checkout (now live):** points are worth **1 pesewa each** (100 points = GHS 1). Send `points_to_redeem` on `POST /checkout` (§2.5). The discount is **capped at the subtotal** — points reduce the cost of the coffee, never the delivery fee — so the most a customer can usefully redeem is `min(balance, subtotal_pesewas)`; compute that to bound the control and show the resulting `discount_pesewas`/`total_pesewas` from the returned order. Over-redeeming the balance returns `409 insufficient_points`. If a redeemed order is later cancelled, the points are automatically refunded (a `refund_on_cancel` ledger entry), so the balance self-heals.
 
+### 2.9 Password reset (now live)
+- **Powered by:** `POST /auth/password-reset/request {email}` then `POST /auth/password-reset/confirm {token, password}`. **Auth:** none (you're locked out — that's the point). Both are rate-limited (`429 rate_limited`, 10/min per IP).
+- **Request step:** always returns `200 {message}` — **the same response whether or not the email exists** (no account enumeration). Build a single "if that address has an account, we've sent a link" confirmation screen; never branch the UI on whether the email was found.
+- **The link:** the user receives a link to your reset page carrying the token, e.g. `{FRONTEND_ORIGIN}/reset-password?token=…`. Build a `/reset-password` route that reads `token` from the query string and posts it with the new password to the confirm step. *(Backend note: email delivery is wired at deploy time; until then the link is in the server logs — see STATE.md.)*
+- **Confirm step:** send `{token, password}` (the new password, **min 8 chars** — `400 validation` otherwise). On success: `200 {message}`. The token is **single-use and expires after 1 hour**; an unknown, already-used, or expired token all return `400 invalid_token` — show "this reset link is invalid or has expired, request a new one" and route back to the request step.
+- **After a successful reset, every existing session is revoked** (all refresh tokens are dropped server-side). The user must log in again with the new password — there is no auto-login from this flow.
+
 ---
 
 ## 3. Staff screens

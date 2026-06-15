@@ -120,21 +120,28 @@ func (m *TokenManager) ParseAccessToken(tokenStr string) (*Claims, error) {
 	return claims, nil
 }
 
-// GenerateRefreshToken returns a fresh, URL-safe random refresh token. The raw
-// value is shown to the client once (in an httpOnly cookie) and never stored;
-// only its hash is persisted.
-func GenerateRefreshToken() (string, error) {
+// GenerateOpaqueToken returns a fresh, URL-safe random bearer secret. It backs
+// both refresh tokens and password-reset tokens: in each case the raw value is
+// shown to the client exactly once (a cookie, a reset link) and never stored —
+// only HashToken(raw) is persisted.
+func GenerateOpaqueToken() (string, error) {
 	b := make([]byte, refreshTokenBytes)
 	if _, err := rand.Read(b); err != nil {
-		return "", fmt.Errorf("auth: generating refresh token: %w", err)
+		return "", fmt.Errorf("auth: generating token: %w", err)
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-// HashRefreshToken returns the SHA-256 hex digest of a refresh token. The
-// database stores only this; a leak of the table therefore yields no usable
-// sessions. It is deterministic so a presented token can be looked up by hash.
-func HashRefreshToken(token string) string {
+// HashToken returns the SHA-256 hex digest of an opaque token. The database
+// stores only this; a leak of the table therefore yields no usable secrets. It
+// is deterministic so a presented token can be looked up by hash.
+func HashToken(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
 }
+
+// GenerateRefreshToken and HashRefreshToken name the session-token use of the
+// opaque-token primitives above. They are retained so existing callers read
+// intent-first ("this is a refresh token").
+func GenerateRefreshToken() (string, error) { return GenerateOpaqueToken() }
+func HashRefreshToken(token string) string   { return HashToken(token) }

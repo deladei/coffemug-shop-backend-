@@ -55,7 +55,7 @@ func newHarness(t *testing.T) *harness {
 	const truncate = `TRUNCATE
 		loyalty_ledger, order_events, order_lines, orders,
 		cart_lines, carts, item_variants, items, categories,
-		refresh_tokens, users RESTART IDENTITY CASCADE`
+		password_reset_tokens, refresh_tokens, users RESTART IDENTITY CASCADE`
 	if _, err := st.DB().ExecContext(context.Background(), truncate); err != nil {
 		t.Fatalf("truncate: %v", err)
 	}

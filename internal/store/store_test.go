@@ -47,7 +47,7 @@ func truncateAll(t *testing.T, st *Store) {
 	const q = `TRUNCATE
 		loyalty_ledger, order_events, order_lines, orders,
 		cart_lines, carts, item_variants, items, categories,
-		refresh_tokens, users
+		password_reset_tokens, refresh_tokens, users
 		RESTART IDENTITY CASCADE`
 	if _, err := st.db.ExecContext(context.Background(), q); err != nil {
 		t.Fatalf("truncate: %v", err)

@@ -57,6 +57,8 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /api/v1/auth/login", s.rateLimit(http.HandlerFunc(s.handleLogin)))
 	mux.HandleFunc("POST /api/v1/auth/refresh", s.handleRefresh)
 	mux.HandleFunc("POST /api/v1/auth/logout", s.handleLogout)
+	mux.Handle("POST /api/v1/auth/password-reset/request", s.rateLimit(http.HandlerFunc(s.handlePasswordResetRequest)))
+	mux.Handle("POST /api/v1/auth/password-reset/confirm", s.rateLimit(http.HandlerFunc(s.handlePasswordResetConfirm)))
 
 	// Catalog (public reads).
 	mux.HandleFunc("GET /api/v1/categories", s.handleListCategories)

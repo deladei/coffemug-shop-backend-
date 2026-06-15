@@ -14,6 +14,7 @@ import (
 const (
 	refreshCookieName = "refresh_token"
 	refreshTTL        = 7 * 24 * time.Hour // 7-day rotating refresh token
+	passwordResetTTL  = time.Hour          // a reset link is valid for one hour
 )
 
 // publicUser is the user shape returned to clients — never the password hash.
@@ -157,6 +158,108 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 	s.clearRefreshCookie(w)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type passwordResetRequestRequest struct {
+	Email string `json:"email"`
+}
+
+// handlePasswordResetRequest starts a reset. It ALWAYS responds 200 with the
+// same generic body whether or not the email is registered — revealing "no such
+// account" here would turn this into an account-enumeration oracle (CLAUDE.md
+// §4). When the email does resolve to a user, an opaque token is generated, its
+// hash stored with a one-hour expiry, and the raw token handed to delivery.
+//
+// Delivery is out of band: there is no email provider wired (no SMTP dep, per
+// §5), so the reset link is logged server-side for the demo/E2E. Production
+// swaps this single call for a real mailer — see DECISIONS.md (2026-06-14).
+func (s *Server) handlePasswordResetRequest(w http.ResponseWriter, r *http.Request) {
+	var req passwordResetRequestRequest
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
+
+	// Generic success regardless of outcome. Built once and reused on every path.
+	ok := func() {
+		writeJSON(w, http.StatusOK, map[string]string{
+			"message": "if that email is registered, a password reset link has been sent",
+		})
+	}
+
+	// A malformed email can never match a user; respond generically, do no work.
+	if _, err := mail.ParseAddress(req.Email); err != nil {
+		ok()
+		return
+	}
+
+	u, err := s.store.GetUserByEmail(r.Context(), req.Email)
+	if errors.Is(err, store.ErrNotFound) {
+		ok()
+		return
+	}
+	if err != nil {
+		s.serverError(w, "password reset lookup", err)
+		return
+	}
+
+	raw, err := auth.GenerateOpaqueToken()
+	if err != nil {
+		s.serverError(w, "generating reset token", err)
+		return
+	}
+	if err := s.store.CreatePasswordResetToken(r.Context(), u.ID, auth.HashToken(raw), time.Now().Add(passwordResetTTL)); err != nil {
+		s.serverError(w, "storing reset token", err)
+		return
+	}
+
+	// TODO(deploy): replace this log with a real email send to u.Email.
+	resetLink := strings.TrimRight(s.cfg.FrontendOrigin, "/") + "/reset-password?token=" + raw
+	s.logger.Info("password reset requested", "user_id", u.ID, "reset_link", resetLink)
+
+	ok()
+}
+
+type passwordResetConfirmRequest struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
+}
+
+// handlePasswordResetConfirm completes a reset: it validates the new password,
+// then atomically redeems the token and sets the password (store.ConsumePasswordReset
+// also clears the user's other reset tokens and revokes all their sessions). A
+// token that is unknown, already used, or expired all yield the same 400
+// invalid_token — the client cannot tell which, and should just request a new link.
+func (s *Server) handlePasswordResetConfirm(w http.ResponseWriter, r *http.Request) {
+	var req passwordResetConfirmRequest
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+	if req.Token == "" {
+		writeError(w, http.StatusBadRequest, codeInvalidToken, "a reset token is required")
+		return
+	}
+	if len(req.Password) < 8 {
+		writeError(w, http.StatusBadRequest, codeValidation, "password must be at least 8 characters")
+		return
+	}
+
+	hash, err := auth.HashPassword(req.Password)
+	if err != nil {
+		s.serverError(w, "hashing password", err)
+		return
+	}
+
+	switch err := s.store.ConsumePasswordReset(r.Context(), auth.HashToken(req.Token), hash); {
+	case errors.Is(err, store.ErrNotFound), errors.Is(err, store.ErrTokenExpired):
+		writeError(w, http.StatusBadRequest, codeInvalidToken, "this reset link is invalid or has expired")
+		return
+	case err != nil:
+		s.serverError(w, "consuming reset token", err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"message": "your password has been updated"})
 }
 
 // issueSession creates a new rotating refresh token (stored hashed), sets it as

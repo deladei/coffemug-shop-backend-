@@ -23,6 +23,7 @@ const (
 	codeValidation         = "validation"
 	codeUnauthorized       = "unauthorized"
 	codeInvalidCredentials = "invalid_credentials"
+	codeInvalidToken       = "invalid_token"
 	codeForbidden          = "forbidden"
 	codeNotFound           = "not_found"
 	codeEmailTaken         = "email_taken"

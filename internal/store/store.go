@@ -26,6 +26,7 @@ var (
 	ErrUnavailable        = errors.New("store: item is unavailable")
 	ErrInvalidTransition  = errors.New("store: invalid status transition")
 	ErrInsufficientPoints = errors.New("store: insufficient loyalty points to redeem")
+	ErrTokenExpired       = errors.New("store: token has expired")
 )
 
 // pgUniqueViolation is the SQLSTATE code Postgres returns on a UNIQUE breach.
