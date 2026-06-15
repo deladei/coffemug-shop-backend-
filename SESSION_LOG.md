@@ -34,3 +34,10 @@ One short entry per session: what was built or changed.
 - Handlers map unknown/used/expired tokens to one `400 invalid_token` (new error code); confirm enforces the same min-8-char rule as register. **No email dependency** (CLAUDE.md §5): the request handler logs the reset link server-side with a `TODO(deploy)` marker and never returns the token; the link is built from `FRONTEND_ORIGIN`.
 - Tests: `internal/store/password_reset_test.go` (happy path incl. session revocation, single-use replay, unknown, expired-leaves-password-untouched) and `internal/httpapi/password_reset_test.go` (request generic for registered/unknown/malformed email, confirm happy path incl. old-pw-fails/new-pw-works + sessions revoked, bad-token, expired-token, short-password). Truncate lists in both test harnesses extended with `password_reset_tokens`. `go test -p 1 ./...` green with `TEST_DATABASE_URL`.
 - Published to API brief §2.9; three entries added to DECISIONS.md (the feature/design, the no-email decision, the no-enumeration decision).
+
+## Session 4 — 2026-06-15
+
+- Verified the monorepo mirror rather than re-running it. STATE.md flagged PR #1 as "behind by S2+S3", but the live `backend-bootstrap` branch already carried `b42014c chore(backend): mirror standalone backend to 7727016` — a prior pass had mirrored after STATE.md was last written, making the note stale.
+- Verification: compared `git ls-tree -r HEAD` of standalone vs. monorepo `backend/` — **61 files, byte-identical (matching blob hashes)**; `b42014c` touched **0** `frontend/` files; `origin/backend-bootstrap` == local. No re-mirror outstanding.
+- Corrected the stale "PR behind" notes throughout STATE.md (status block + Next action) to record the verified-current state. No backend code changed; build/test untouched and still green from S3.
+- Next substantive work remains owner-gated (Paystack E2E / deploy) or the S4 guest-checkout API-shape decision.
