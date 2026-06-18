@@ -44,8 +44,8 @@ func NewServer(cfg *config.Config, st *store.Store, tm *auth.TokenManager, ps *p
 }
 
 // Handler builds the full route table and wraps it in the global middleware
-// chain (panic recovery → request logging → CORS). The returned handler is what
-// cmd/api serves.
+// chain (panic recovery → security headers → request logging → CORS). The
+// returned handler is what cmd/api serves.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 
@@ -102,7 +102,7 @@ func (s *Server) Handler() http.Handler {
 	// Admin-only: business reports (revenue is financial data → admin, not staff).
 	mux.Handle("GET /api/v1/admin/reports/summary", s.requireRole(http.HandlerFunc(s.handleReportSummary), "admin"))
 
-	return s.recoverPanic(s.logRequests(s.cors(mux)))
+	return s.recoverPanic(s.securityHeaders(s.logRequests(s.cors(mux))))
 }
 
 func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {

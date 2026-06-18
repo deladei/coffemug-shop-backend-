@@ -5,7 +5,10 @@
 # Railway, Fly.io, plain Docker).
 
 # ---- build stage ----
-FROM golang:1.22-alpine AS build
+# Pinned to a specific patched 1.22.x (not the floating 1.22 tag) for
+# reproducible, auditable builds — this patch carries the stdlib security fixes
+# that govulncheck flags on older toolchains.
+FROM golang:1.22.12-alpine AS build
 WORKDIR /src
 
 # Download modules first so this layer caches unless go.mod/go.sum change.
