@@ -41,3 +41,12 @@ One short entry per session: what was built or changed.
 - Verification: compared `git ls-tree -r HEAD` of standalone vs. monorepo `backend/` — **61 files, byte-identical (matching blob hashes)**; `b42014c` touched **0** `frontend/` files; `origin/backend-bootstrap` == local. No re-mirror outstanding.
 - Corrected the stale "PR behind" notes throughout STATE.md (status block + Next action) to record the verified-current state. No backend code changed; build/test untouched and still green from S3.
 - Next substantive work remains owner-gated (Paystack E2E / deploy) or the S4 guest-checkout API-shape decision.
+
+## Session 5 — 2026-06-16
+
+- Phase 2 **S4 guest checkout** (backend). New endpoint `POST /api/v1/auth/guest {name?, phone?}` (rate-limited) mints a **passwordless guest** and returns the standard login session, so cart/checkout/ownership/SSE/history all work unchanged for a guest.
+- `feat(db)` migration `0003_users_is_guest` — adds `users.is_guest BOOLEAN NOT NULL DEFAULT FALSE`; up/down verified, applied to the local test DB.
+- `internal/store`: `User.IsGuest` plumbed through `CreateUser` (INSERT + new `$6`), `GetUserByEmail`/`GetUserByID` (SELECT) and `scanUser`. `TransitionOrder` reads `is_guest` inside the completion branch and **suppresses the `earn_on_completion` ledger row for guests** (they can never log back in to spend points).
+- `internal/httpapi`: `handleGuestSession` — optional `{name, phone}` (empty body → "Guest"); mints a synthetic unique non-routable email (`guest-<token>@guest.coffeemug.local`) and an unusable bcrypt hash (of a random secret), sets `is_guest=true`, issues the session. Route registered under the auth rate limiter. The public user shape is unchanged (no `is_guest` field leaked to clients).
+- Tests: `internal/store/guest_test.go` (is_guest round-trips; completed guest order earns 0 points) and `internal/httpapi/guest_test.go` (guest session is usable on a protected endpoint; anonymous body allowed; **guest cannot log in** — its synthetic email + any password → `401 invalid_credentials`). `go build`/`go vet` clean; full `go test -p 1 ./...` green with `TEST_DATABASE_URL`.
+- Published to API brief §2.4 (+ auth permissions table); decision recorded in DECISIONS.md (passwordless-user model over nullable `orders.user_id`, with the no-enumeration / no-loyalty reasoning).
