@@ -62,6 +62,22 @@ variables (`DATABASE_URL`, `JWT_SECRET`, `PAYSTACK_SECRET_KEY`, `FRONTEND_ORIGIN
 binary. If the frontend is on a different origin, the refresh cookie must be
 switched to `SameSite=None; Secure`.
 
+### Render (Blueprint)
+
+`render.yaml` provisions the whole stack. In the Render dashboard: **New →
+Blueprint →** pick this repo. Render reads the blueprint, creates the managed
+Postgres and the Docker web service, wires `DATABASE_URL` between them, and
+generates `JWT_SECRET`. Then, in the service's **Environment** tab, set the two
+dashboard-only secrets — `PAYSTACK_SECRET_KEY` (`sk_test_…`/`sk_live_…`) and
+`FRONTEND_ORIGIN` (the deployed frontend URL) — and deploy. The container builds
+from the `Dockerfile`; migrations run automatically via `preDeployCommand` on
+paid plans (on the free plan, run that same psql loop once from the Render
+Shell). Health check: `GET /api/v1/healthz`.
+
+Two caveats called out in the blueprint comments: Render's **free** Postgres
+expires after ~90 days (use `basic-256mb`+ for anything real), and free web
+services sleep on inactivity and cannot run `preDeployCommand`.
+
 ## Payment integrity
 
 An order becomes `paid` **only** through the Paystack webhook, which must pass
